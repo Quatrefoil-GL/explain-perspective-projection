@@ -52,8 +52,8 @@
           :code $ quote $ defcomp comp-container (store)
             let
                 look-distance $ [] 20 30 -60
-                screen-x $ wo-log $ calc-unit-x-axis look-distance
-                screen-y $ wo-log $ calc-unit-y-axis look-distance
+                screen-x $ calc-unit-x-axis look-distance
+                screen-y $ calc-unit-y-axis look-distance
                 s $ noted "|cone back scale" 0.5
                 targets $ [] ([] 80 70 -90) (; 50 90 -70)
                 projections $ map targets $ fn (p) (transform-3d p look-distance s)
@@ -299,7 +299,7 @@
           :require
             quatrefoil.alias :refer $ group box sphere point-light ambient-light perspective-camera scene text line line-segments mesh-line
             quatrefoil.core :refer $ defcomp >>
-            [] quaternion.vector :as qv
+            quaternion.vector :as qv
     'app.comp.nav $ %{} 'FileEntry
       :defs $ {}
         'comp-nav $ %{} 'CodeEntry (:doc |)
@@ -433,7 +433,7 @@
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (non-nil? build-errors) (hud! |error build-errors)
-              do (hud! |ok~ nil) (clear-cache!) (clear-control-loop!) (handle-control-events) (respo/clear-cache!) (remove-watch *store :changes)
+              do (hud! |ok~ nil) (clear-cache!) (clear-control-loop!) (handle-control-events) (respo/clear-cache!) (remove-watch! *store :changes)
                 add-watch! *store :changes $ fn (store prev) (render-app!)
                 render-app!
                 set! js/window.onkeydown handle-key-event
@@ -461,9 +461,9 @@
             |@quatrefoil/utils :refer $ inject-tree-methods
             quatrefoil.core :refer $ render-canvas! init-controls! *global-tree clear-cache! init-renderer! handle-key-event handle-control-events
             app.comp.container :refer $ comp-container
-            app.updater :refer $ [] updater
+            app.updater :refer $ updater
             |three :as THREE
-            touch-control.core :refer $ render-control! control-states start-control-loop! clear-control-loop!
+            touch-control.core :refer $ render-control! start-control-loop! clear-control-loop!
             |bottom-tip :default hud!
             |./calcit.build-errors :default build-errors
             app.config :refer $ dev?
