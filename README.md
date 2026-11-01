@@ -1,42 +1,42 @@
-
-(TODO)Expain perspective projection
+Explain perspective projection
 ----
 
-> Based on [Quatrefoil](https://github.com/Quatrefoil-GL/quatrefoil).
+Demo: http://r.tiye.me/Quatrefoil-GL/explain-perspective-projection/
 
-Demo http://r.tiye.me/Quatrefoil-GL/explain-perspective-projection/
+### 使用者影响
 
-### 迁移说明
+配对使用正式 Calcit CLI/procs 0.32.1，类型标注由官方 CLI 迁移。
+Quatrefoil 0.2.0、Quaternion 0.2.19、Touch Control 0.0.35、Pointed Prompt 0.0.24、
+JS-FFI 0.2.9 组成一致的正式依赖图。包龄明确为 60 分钟，无单版本豁免。
+保留原类型/质量门禁和 hud! 页面提示，不新增验证脚本或测试框架，不提交生成目录。
 
-使用正式 Calcit/procs 0.30.1；依赖为 Quatrefoil 0.1.10、Quaternion 0.2.16、
-Touch Control 0.0.32、Respo 0.16.124、UI 0.8.0 和 Markdown 0.4.59，
-沿用它们声明的正式传递依赖，无 alpha/hash 或冲突豁免。
+投影公式、Projection字段、坐标轴、相机、原0.01 scale及菜单内容不变。
+说明面板的可选子节点改成Respo list->显式列表，保留链接键0和说明键1。
+新增真实菜单操作NavOp，只有states(cursor:List<Tag>,state:Map<Tag,Dynamic>)；
+菜单实际构造此Enum并绑定Respo dispatch-op，render!通过对应类型回调转发。
+原Quatrefoil开放dispatch/updater及其兼容行为不变，不用dynamic类型槽绕过检查。
 
-投影公式、单位坐标轴、Projection 字段、菜单、场景、相机及原 0.01 scale 不变。
-清理两处无效果的 wo-log、旧 remove-watch 和 import 标记，不新增 cast、定义、
-测试框架或编译器规则。仅维护 calcit.cirru/deps.cirru，不提交生成目录。
+说明面板配对正式Markdown 0.5.0、UI 0.9.0、Respo 0.17.1；UI固定依赖Router
+0.9.0-alpha.4，该传递alpha保留，不宣称整个依赖图都已稳定。
 
-上轮 0.30.0 的本地全定义 368/368、项目公开 29/29、完整 strict、配对工具链、immutable install
-及 CDN 构建通过。八个数学/投影定义完整元数据不变，旧/新正式图上的 native
-单位坐标轴与原点投影回放通过；菜单、说明面板、重载无 browser error。
-本轮未重做键盘相机、完整 3D 操控、VR 或 WASM，不沿用历史记录冒充本轮验收。
-formatter 仍有开放类型位置，未宣称全部类型债务清零，也未放宽 bundle 警告阈值。
-本轮配对更新正式 0.30.1 图，保留现有源码、投影数学和 `hud!` 页面提示。
-CI 要求完整 strict 的 workflow passed 且 diagnostics 为空；不另加脚本或测试框架。
-上轮证据不替代本轮 CI 与实际浏览器验收，实际 COS 和生产验收以相应 Actions 为准。
+### 开发与验收
 
-### Frontend deployment
+```sh
+caps --strict --ci
+yarn install --immutable
+caps verify --toolchain
+yarn compile
+yarn build
+yarn dev
+```
 
-CI uses Calcit 0.30.1 and Node 24 with strict Caps, immutable Yarn, full-definition
-checks and the read-only strict workflow gate. Frontend dist assets use COS Action
-v1.2.0 builtin public checksum verification, with no separate verification script.
-PR CDN paths include PR/run/attempt; production uses the original repository
-prefix. Fork PRs build without deployment secrets. The original main rsync
-destination remains unchanged; no backend deployment is migrated.
+完整strict、370/370定义、30/30公开定义、配对工具链、immutable安装、编译和构建通过。
+原项目无附带测试，本轮不新增测试框架。实际IAB菜单多次开关、Markdown显示、
+相机靠近及刷新通过，控制台无警告/错误；不宣称所有3D参数、VR、移动硬件或跨GPU验收。
+默认远景仍极小，桌面聚焦改进见 [issue #6](https://github.com/Quatrefoil-GL/explain-perspective-projection/issues/6)，迁移不改变VR坐标或场景布局。
 
-### Workflow
-
-https://github.com/Quatrefoil-GL/quatrefoil-workflow
+COS仅使用action内置public-base-url校验，PR prefix按编号/run/attempt隔离，
+原生产CDN、rsync路径与main触发条件不变；本地构建不代替实际上传和生产验收。
 
 ### License
 
