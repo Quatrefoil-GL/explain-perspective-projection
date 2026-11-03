@@ -10,13 +10,18 @@
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
+        'MaterialValue $ %{} 'CodeEntry
+          :doc "|本示例材质常量的实际值域：种类 Tag、颜色/透明度/线宽 Number、布尔开关；不代表库的全部材质 API。"
+          :code $ quote $ defunion MaterialValue Tag Number Bool
+          :examples $ []
+          :schema $ quote UnionDef
         'Projection $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Projection
-            :p0 $ quote $ List Number
-            :scale 'Number
-            :shadow $ quote $ List Number
-            :x 'Number
-            :y 'Number
+            :p0 $ quote $ Tuple Number Number Number
+            :scale Number
+            :shadow $ quote $ Tuple Number Number Number
+            :x Number
+            :y Number
           :examples $ []
           :schema $ quote StructDef
         'calc-unit-x-axis $ %{} 'CodeEntry (:doc |)
@@ -25,16 +30,16 @@
               [] (negate c) 0 a
               / 1 $ sqrt $ sum-squares a c
           :examples $ []
-          :schema $ quote $ Fn (List Number)
-            -> $ List Number
+          :schema $ quote $ Fn (Tuple Number Number Number)
+            -> $ Tuple Number Number Number
         'calc-unit-y-axis $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn calc-unit-y-axis (p)
             let[] (a b c) p $ v-scale
               [] (* -1 a b) (sum-squares a c) (* -1 b c)
               / 1 $ sqrt $ sum-squares (* a b) (sum-squares a c) (* b c)
           :examples $ []
-          :schema $ quote $ Fn (List Number)
-            -> $ List Number
+          :schema $ quote $ Fn (Tuple Number Number Number)
+            -> $ Tuple Number Number Number
         'comp-axis $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn comp-axis ()
             line-segments $ {}
@@ -48,11 +53,14 @@
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (store)
             let
-                look-distance $ [] 20 30 -60
+                look-distance $ assert-type ([] 20 30 -60)
+                  quote $ Tuple Number Number Number
                 screen-x $ calc-unit-x-axis look-distance
                 screen-y $ calc-unit-y-axis look-distance
                 s $ noted "|cone back scale" 0.5
-                targets $ [] ([] 80 70 -90) (; 50 90 -70)
+                targets $ assert-type
+                  [] ([] 80 70 -90) (; 50 90 -70)
+                  quote $ List $ Tuple Number Number Number
                 projections $ map targets $ fn (p) (transform-3d p look-distance s)
                 scaled 0.01
               scene ({})
@@ -79,13 +87,14 @@
                     text $ {} (:text |O) (:material style-point) (:size 0.8) (:depth 0.5)
                       :position $ [] 1 0 1
                   if (not= s 0)
-                    group ({})
+                    Option :some $ group ({})
                       sphere $ {} (:radius 1) (:material style-point)
                         :position $ v-scale look-distance $ negate s
                       text $ {} (:text |S) (:material style-point) (:size 0.8) (:depth 0.5)
                         :position $ v+
                           v-scale look-distance $ negate s
                           [] -1 -2 0
+                    Option :none
                   point-light $ {} (:color 0xffffff) (:intensity 1.4) (:distance 200)
                     :position $ [] 20 40 50
                   ; point-light $ {} (:color 0xffffff) (:intensity 2) (:distance 200)
@@ -160,7 +169,7 @@
                       v+ (v-scale screen-y 18) (v-scale screen-x -32)
                   :material $ {} (:kind :line-basic) (:color 0xaaaa88) (:opacity 0.9) (:transparent true)
           :examples $ []
-          :schema $ quote $ Fn (List Number) (List Number) (List Number) (-> quatrefoil.schema/Shape)
+          :schema $ quote $ Fn (Tuple Number Number Number) (Tuple Number Number Number) (Tuple Number Number Number) (-> quatrefoil.schema/Shape)
         'comp-point-explain $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn comp-point-explain (idx pro look-distance screen-x screen-y s)
             let
@@ -209,7 +218,7 @@
                     :points $ [] point-on-screen screen-near
                     :material style-bold-line
           :examples $ []
-          :schema $ quote $ Fn Number app.comp.container/Projection (List Number) (List Number) (List Number) Number (-> quatrefoil.schema/Shape)
+          :schema $ quote $ Fn Number app.comp.container/Projection (Tuple Number Number Number) (Tuple Number Number Number) (Tuple Number Number Number) Number (-> quatrefoil.schema/Shape)
         'point-label $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn point-label (t idx)
             if (> idx 0) (str t "| " idx) t
@@ -223,17 +232,17 @@
           :code $ quote $ def style-bold-line
             {} (:kind :mesh-line) (:color 0xaaaaff) (:transparent true) (:opacity 0.6) (:depthTest true) (:lineWidth 0.3)
           :examples $ []
-          :schema $ quote Dynamic
+          :schema $ quote $ Map Tag app.comp.container/MaterialValue
         'style-line $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-line
             {} (:kind :line-basic) (:color 0x5555aa) (:opacity 0.9) (:transparent true)
           :examples $ []
-          :schema $ quote Dynamic
+          :schema $ quote $ Map Tag app.comp.container/MaterialValue
         'style-point $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-point
             {} (:kind :mesh-lambert) (:color 0x808080) (:opacity 0.9)
           :examples $ []
-          :schema $ quote Dynamic
+          :schema $ quote $ Map Tag app.comp.container/MaterialValue
         'sum-squares $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sum-squares (& xs)
             -> xs (map square) (reduce 0 &+)
@@ -264,23 +273,23 @@
                 z' $ negate r
               Projection :p0 point :scale r :shadow ([] x' y' z') :x x' :y y'
           :examples $ []
-          :schema $ quote $ Fn (List Number) (List Number) Number (-> app.comp.container/Projection)
+          :schema $ quote $ Fn (Tuple Number Number Number) (Tuple Number Number Number) Number (-> app.comp.container/Projection)
         'v+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn v+ (p q)
             let[] (x y z) p $ let[] (a b c) q $ match
               qv/v+ (qv/v3 x y z) (qv/v3 a b c)
               (:v3 u v w) ([] u v w)
           :examples $ []
-          :schema $ quote $ Fn (List Number) (List Number)
-            -> $ List Number
+          :schema $ quote $ Fn (Tuple Number Number Number) (Tuple Number Number Number)
+            -> $ Tuple Number Number Number
         'v-scale $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn v-scale (point n)
             let[] (x y z) point $ match
               qv/v-scale (qv/v3 x y z) n
               (:v3 a b c) ([] a b c)
           :examples $ []
-          :schema $ quote $ Fn (List Number) Number
-            -> $ List Number
+          :schema $ quote $ Fn (Tuple Number Number Number) Number
+            -> $ Tuple Number Number Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require
@@ -301,12 +310,12 @@
             let
                 cursor $ quatrefoil.util.core/require-decoded $ try-decode-map-as
                   .unwrap-or (get states :cursor) ([])
-                  :: 'List 'Tag
+                  quote $ List Tag
                 state $ quatrefoil.util.core/require-decoded $ try-decode-map-as
                   or
                     .unwrap-or (get states :data) nil
                     {} $ :menu? false
-                  :: 'Map 'Tag 'Dynamic
+                  quote $ Map Tag Dynamic
                 menu? $ quatrefoil.util.core/require-decoded $ try-decode-map-as
                   .unwrap-or (get state :menu?) false
                   , 'Bool
@@ -324,9 +333,9 @@
                   if menu?
                     [] $ [] 1 $ div
                       {} $ :class-name css-pop-menu
-                      =< nil 24
+                      space-y 24
                       comp-md-block (load-content |explain.md) ({})
-                      =< nil 120
+                      space-y 120
                     []
           :examples $ []
           :schema $ quote $ Fn (Map Tag Dynamic) (Map Dynamic Dynamic) (-> respo.schema/Component)
@@ -335,19 +344,19 @@
             {} $ |$0 $ merge ui/global
               {} (:color :white) (:position :absolute) (:top 0) (:left 0)
           :examples $ []
-          :schema $ quote Dynamic
+          :schema $ quote String
         'css-pop-menu $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-pop-menu
             {} $ |$0 $ {} (:max-height |90vh) (:border-radius |6px) (:padding "|8px 8px") (:z-index 900) (:position :fixed) (:left 8) (:top 32) (:overflow :auto)
               :color $ hsl 0 0 30
               :background-color $ hsl 0 0 100 $ Option :some 0.9
           :examples $ []
-          :schema $ quote Dynamic
+          :schema $ quote String
         'load-content $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defmacro load-content (file)
             read-file $ str |docs/ file
           :examples $ []
-          :schema $ quote $ Macro Syntax
+          :schema $ quote $ Macro (Expr String)
             -> $ Expr String
             :capabilities :fs-read
       :ns $ %{} 'NsEntry (:doc |)
@@ -356,7 +365,7 @@
             respo-ui.core :refer $ hsl
             respo.core :refer $ defcomp div a
             respo.css :refer $ defstyle
-            respo.comp.space :refer $ =<
+            respo.comp.space :refer $ space-y
             respo-ui.css :as css
             respo-md.comp.md :refer $ comp-md-block
     'app.config $ %{} 'FileEntry
