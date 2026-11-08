@@ -6,7 +6,7 @@
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |touch-control/ |quatrefoil/ |respo.calcit/ |respo-ui.calcit/ |respo-markdown.calcit/ |quaternion/
-      :type-slots $ {} $ :dispatch-op |app.comp.nav/NavOp
+      :type-slots $ {} $ :dispatch-op 'app.comp.nav/NavOp
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
@@ -17,9 +17,9 @@
           :schema $ quote UnionDef
         'Projection $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Projection
-            :p0 $ quote $ Tuple Number Number Number
+            :p0 $ Tuple Number Number Number
             :scale Number
-            :shadow $ quote $ Tuple Number Number Number
+            :shadow $ Tuple Number Number Number
             :x Number
             :y Number
           :examples $ []
@@ -53,14 +53,13 @@
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (store)
             let
-                look-distance $ assert-type ([] 20 30 -60)
-                  quote $ Tuple Number Number Number
+                look-distance $ assert-type ([] 20 30 -60) (Tuple Number Number Number)
                 screen-x $ calc-unit-x-axis look-distance
                 screen-y $ calc-unit-y-axis look-distance
                 s $ noted "|cone back scale" 0.5
                 targets $ assert-type
                   [] ([] 80 70 -90) (; 50 90 -70)
-                  quote $ List $ Tuple Number Number Number
+                  List $ Tuple Number Number Number
                 projections $ map targets $ fn (p) (transform-3d p look-distance s)
                 scaled 0.01
               scene ({})
@@ -247,7 +246,7 @@
           :code $ quote $ defn sum-squares (& xs)
             -> xs (map square) (reduce 0 &+)
           :examples $ []
-          :schema $ quote $ Fn & Number (-> Number)
+          :schema $ quote $ Fn (& Number) (-> Number)
         'transform-3d $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn transform-3d (point look-distance s)
             let[] (x y z) point $ let[] (a b c) look-distance $ let
@@ -300,9 +299,7 @@
       :defs $ {}
         'NavOp $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum NavOp
-            :states
-              quote $ List Tag
-              quote $ Map Tag Dynamic
+            :states (List Tag) (Map Tag Dynamic)
           :examples $ []
           :schema $ quote EnumDef
         'comp-nav $ %{} 'CodeEntry (:doc |)
@@ -310,12 +307,14 @@
             let
                 cursor $ quatrefoil.util.core/require-decoded $ try-decode-map-as
                   .unwrap-or (get states :cursor) ([])
-                  quote $ List Tag
+                  List Tag
                 state $ quatrefoil.util.core/require-decoded $ try-decode-map-as
-                  or
-                    .unwrap-or (get states :data) nil
-                    {} $ :menu? false
-                  quote $ Map Tag Dynamic
+                  match (get states :data)
+                    (:some found)
+                      or found $ {} $ :menu? false
+                    (:none)
+                      {} $ :menu? false
+                  Map Tag Dynamic
                 menu? $ quatrefoil.util.core/require-decoded $ try-decode-map-as
                   .unwrap-or (get state :menu?) false
                   , 'Bool
@@ -338,7 +337,7 @@
                       space-y 120
                     []
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (Map Dynamic Dynamic) (-> respo.schema/Component)
+          :schema $ quote $ Fn (Map Tag Dynamic) (Map Tag Dynamic) (-> respo.schema/Component)
         'css-nav $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-nav
             {} $ |$0 $ merge ui/global
@@ -386,23 +385,21 @@
           :examples $ []
           :schema $ quote $ Ref (Map Tag Dynamic)
         'dispatch! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn dispatch! (op & payload)
-            let
-                data $ .unwrap-or (.first payload) nil
-              cond
-                  list? op
-                  reset! *store $ updater @*store :states $ [] op data
-                (tag? op)
-                  reset! *store $ updater @*store op data
-                (enum? op)
-                  match op
-                    (:states cursor state)
-                      reset! *store $ updater @*store :states $ [] cursor state
-                    _ $ reset! *store @*store
-                true $ reset! *store @*store
+          :code $ quote $ defn dispatch! (op data)
+            cond
+                list? op
+                reset! *store $ updater @*store :states $ [] op data
+              (tag? op)
+                reset! *store $ updater @*store op data
+              (enum? op)
+                match op
+                  (:states cursor state)
+                    reset! *store $ updater @*store :states $ [] cursor state
+                  _ $ reset! *store @*store
+              true $ reset! *store @*store
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Dynamic & Dynamic (-> Unit)
+          :schema $ quote $ Fn Dynamic Dynamic (-> Unit)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             when dev? (load-console-formatter!) (println "|Run in dev mode")
@@ -445,12 +442,14 @@
           :code $ quote $ defn render-app! () (; println "|Render app:")
             render-canvas! (comp-container @*store) dispatch!
             respo/render! mount-target
-              comp-nav @*store $ >>
-                .unwrap $ get @*store :states
-                , :dom
+              comp-nav @*store $ quatrefoil.util.core/require-decoded $ try-decode-map-as
+                >>
+                  .unwrap $ get @*store :states
+                  , :dom
+                Map Tag Dynamic
               fn (op)
                 hint-fn $ Fn app.comp.nav/NavOp $ -> Unit
-                dispatch! op
+                dispatch! op nil
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)

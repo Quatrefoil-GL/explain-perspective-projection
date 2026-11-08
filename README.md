@@ -5,9 +5,9 @@ Demo: http://r.tiye.me/Quatrefoil-GL/explain-perspective-projection/
 
 ### 使用者影响
 
-配对正式 **Calcit CLI / @calcit/procs 0.34.2**。完整正式图使用 Quatrefoil **0.3.2**、
-Quaternion **0.2.20**、Touch Control **0.0.37**、Pointed Prompt **0.0.25**、
-Markdown **0.7.0**、UI **0.14.0**、Respo **0.19.1**、JS-FFI **0.2.10**、Router **0.11.1**；
+配对正式 **Calcit CLI / @calcit/procs 0.37.0**。完整正式图使用 Quatrefoil **0.3.4**、
+Quaternion **0.2.23**、Touch Control **0.0.39**、Pointed Prompt **0.0.27**、
+Markdown **0.8.2**、UI **0.15.2**、Respo **0.19.5**、JS-FFI **0.2.13**、Router **0.12.2**；
 需整体安装后重新生成 JS，不混装旧图，不再保留传递 Router alpha。
 
 三份材质常量使用 `MaterialValue = Tag | Number | Bool`，两个 CSS 常量明确为 String；
@@ -32,7 +32,7 @@ yarn build
 yarn dev
 ```
 
-本轮正式 Caps strict/toolchain、immutable、canonical dry-run、375/375 全定义、31/31
+此前 0.34.2 迁移的正式 Caps strict/toolchain、immutable、canonical dry-run、375/375 全定义、31/31
 公开定义、完整 strict（diagnostics=[]）、编译及构建通过。原项目没有附带测试套件，
 不把空套件当作通过；临时 native 数学验收覆盖向量加法、缩放及原投影的倍率/原点字段。
 同一官方 0.34.2 对照中 schema Dynamic **17→12**、unresolved **25→18**，unsafe/deprecated
@@ -42,7 +42,7 @@ yarn dev
 实际 Three 场景 25 个 geometry、51231 项坐标有限，菜单开关前后缓冲区摘要相同；截图已检查。
 默认远景仍极小，桌面聚焦改进仍见 [issue #6](https://github.com/Quatrefoil-GL/explain-perspective-projection/issues/6)，
 不改变 VR 坐标或原场景布局。本轮不承诺所有参数、相机交互、实体移动硬件、VR 或跨 GPU 验收。
-新精确 CI 与评审仍需跟进。
+本次 0.37.0 的 CI 和评审见迁移 PR。
 
 COS仅使用action内置public-base-url校验，PR prefix按编号/run/attempt隔离，
 原生产CDN、rsync路径与main触发条件不变；本地构建不代替实际上传和生产验收。
