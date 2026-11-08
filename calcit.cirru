@@ -51,7 +51,7 @@
           :examples $ []
           :schema $ quote $ Fn (-> quatrefoil.schema/Shape)
         'comp-container $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-container (store)
+          :code $ quote $ defcomp comp-container ()
             let
                 look-distance $ assert-type ([] 20 30 -60) (Tuple Number Number Number)
                 screen-x $ calc-unit-x-axis look-distance
@@ -99,7 +99,7 @@
                   ; point-light $ {} (:color 0xffffff) (:intensity 2) (:distance 200)
                     :position $ [] 0 60 0
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (-> quatrefoil.schema/Component)
+          :schema $ quote $ Fn (-> quatrefoil.schema/Component)
         'comp-demo $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-demo ()
             group ({})
@@ -299,45 +299,31 @@
       :defs $ {}
         'NavOp $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum NavOp
-            :states (List Tag) (Map Tag Dynamic)
+            :menu (List Tag) Bool
           :examples $ []
           :schema $ quote EnumDef
         'comp-nav $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-nav (store states)
-            let
-                cursor $ quatrefoil.util.core/require-decoded $ try-decode-map-as
-                  .unwrap-or (get states :cursor) ([])
-                  List Tag
-                state $ quatrefoil.util.core/require-decoded $ try-decode-map-as
-                  match (get states :data)
-                    (:some found)
-                      or found $ {} $ :menu? false
-                    (:none)
-                      {} $ :menu? false
-                  Map Tag Dynamic
-                menu? $ quatrefoil.util.core/require-decoded $ try-decode-map-as
-                  .unwrap-or (get state :menu?) false
-                  , 'Bool
-              respo.core/list->
-                {} $ :class-name css-nav
-                concat
-                  [] $ [] 0 $ a
-                    {} (:inner-text |Menu) (:class-name css/link)
-                      :on-click $ fn (e d!)
-                        hint-fn $ Fn (Map Tag Dynamic)
-                          Fn NavOp $ -> Unit
-                          -> Unit
-                        d! $ NavOp :states cursor $ assoc state :menu? (not menu?)
-                        , &unit
-                  if menu?
-                    [] $ [] 1 $ div
-                      {} $ :class-name css-pop-menu
-                      space-y 24
-                      comp-md-block (load-content |explain.md) ({})
-                      space-y 120
-                    []
+          :code $ quote $ defcomp comp-nav (cursor menu?)
+            respo.core/list->
+              {} $ :class-name css-nav
+              concat
+                [] $ [] 0 $ a
+                  {} (:inner-text |Menu) (:class-name css/link)
+                    :on-click $ fn (e d!)
+                      hint-fn $ Fn respo.schema/RespoEvent
+                        Fn NavOp $ -> Unit
+                        -> Unit
+                      d! $ NavOp :menu cursor $ not menu?
+                      , &unit
+                if menu?
+                  [] $ [] 1 $ div
+                    {} $ :class-name css-pop-menu
+                    space-y 24
+                    comp-md-block (load-content |explain.md) ({})
+                    space-y 120
+                  []
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (Map Tag Dynamic) (-> respo.schema/Component)
+          :schema $ quote $ Fn (List Tag) Bool (-> respo.schema/Component)
         'css-nav $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-nav
             {} $ |$0 $ merge ui/global
@@ -439,17 +425,33 @@
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'render-app! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn render-app! () (; println "|Render app:")
-            render-canvas! (comp-container @*store) dispatch!
-            respo/render! mount-target
-              comp-nav @*store $ quatrefoil.util.core/require-decoded $ try-decode-map-as
-                >>
-                  .unwrap $ get @*store :states
-                  , :dom
-                Map Tag Dynamic
-              fn (op)
-                hint-fn $ Fn app.comp.nav/NavOp $ -> Unit
-                dispatch! op nil
+          :code $ quote $ defn render-app! ()
+            render-canvas! (comp-container) dispatch!
+            let
+                states $ quatrefoil.util.core/require-decoded $ try-decode-map-as
+                  >>
+                    .unwrap $ get @*store :states
+                    , :dom
+                  Map Tag Dynamic
+                cursor $ quatrefoil.util.core/require-decoded $ try-decode-map-as
+                  .unwrap-or (get states :cursor) ([])
+                  List Tag
+                state $ quatrefoil.util.core/require-decoded $ try-decode-map-as
+                  match (get states :data)
+                    (:some found)
+                      or found $ {}
+                    (:none) ({})
+                  Map Tag Dynamic
+                menu? $ quatrefoil.util.core/require-decoded $ try-decode-map-as
+                  .unwrap-or (get state :menu?) false
+                  , 'Bool
+              respo/render! mount-target (comp-nav cursor menu?)
+                fn (op)
+                  hint-fn $ Fn app.comp.nav/NavOp $ -> Unit
+                  match op $
+                    :menu cursor visible?
+                    reset! *store $ updater @*store :states $ [] cursor (assoc state :menu? visible?)
+                  , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
