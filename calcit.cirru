@@ -372,18 +372,27 @@
           :schema $ quote $ Ref (Map Tag Dynamic)
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op data)
-            cond
-                list? op
-                reset! *store $ updater @*store :states $ [] op data
-              (tag? op)
-                reset! *store $ updater @*store op data
-              (enum? op)
-                match op
-                  (:states cursor state)
-                    reset! *store $ updater @*store :states $ [] cursor state
-                  _ $ reset! *store @*store
-              true $ reset! *store @*store
-            , &unit
+            let
+                state-event $ cond
+                    list? op
+                    Option :some $ [] op data
+                  (= op :states)
+                    Option :some $ decode-map-as data $ List Dynamic
+                  (enum? op)
+                    match op
+                      (:states cursor state)
+                        Option :some $ [] cursor state
+                      _ $ Option :none
+                  true $ Option :none
+              reset! *store $ match state-event
+                (:some pair)
+                  updater @*store
+                    decode-map-as
+                      .unwrap $ nth pair 0
+                      List Tag
+                    .unwrap $ nth pair 1
+                (:none) @*store
+              , &unit
           :examples $ []
           :schema $ quote $ Fn Dynamic Dynamic (-> Unit)
         'main! $ %{} 'CodeEntry (:doc |)
@@ -450,7 +459,7 @@
                   hint-fn $ Fn app.comp.nav/NavOp $ -> Unit
                   match op $
                     :menu cursor visible?
-                    reset! *store $ updater @*store :states $ [] cursor (assoc state :menu? visible?)
+                    reset! *store $ updater @*store cursor $ assoc state :menu? visible?
                   , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
@@ -473,11 +482,12 @@
     'app.updater $ %{} 'FileEntry
       :defs $ {} $ 'updater
         %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn updater (store op op-data)
-            if (= op :states) (update-states store op-data) store
+          :code $ quote $ defn updater (store cursor state)
+            update-states store $ [] cursor state
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) Tag Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) (List Tag) State
             -> $ Map Tag Dynamic
+            :generics State
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require $ quatrefoil.cursor :refer $ update-states
