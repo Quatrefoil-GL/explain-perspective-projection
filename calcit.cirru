@@ -86,14 +86,14 @@
                     text $ {} (:text |O) (:material style-point) (:size 0.8) (:depth 0.5)
                       :position $ [] 1 0 1
                   if (not= s 0)
-                    Option :some $ group ({})
+                    Some $ group ({})
                       sphere $ {} (:radius 1) (:material style-point)
                         :position $ v-scale look-distance $ negate s
                       text $ {} (:text |S) (:material style-point) (:size 0.8) (:depth 0.5)
                         :position $ v+
                           v-scale look-distance $ negate s
                           [] -1 -2 0
-                    Option :none
+                    , None
                   point-light $ {} (:color 0xffffff) (:intensity 1.4) (:distance 200)
                     :position $ [] 20 40 50
                   ; point-light $ {} (:color 0xffffff) (:intensity 2) (:distance 200)
@@ -217,7 +217,7 @@
                     :points $ [] point-on-screen screen-near
                     :material style-bold-line
           :examples $ []
-          :schema $ quote $ Fn Number app.comp.container/Projection (Tuple Number Number Number) (Tuple Number Number Number) (Tuple Number Number Number) Number (-> quatrefoil.schema/Shape)
+          :schema $ quote $ Fn Number Projection (Tuple Number Number Number) (Tuple Number Number Number) (Tuple Number Number Number) Number (-> quatrefoil.schema/Shape)
         'point-label $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn point-label (t idx)
             if (> idx 0) (str t "| " idx) t
@@ -231,17 +231,17 @@
           :code $ quote $ def style-bold-line
             {} (:kind :mesh-line) (:color 0xaaaaff) (:transparent true) (:opacity 0.6) (:depthTest true) (:lineWidth 0.3)
           :examples $ []
-          :schema $ quote $ Map Tag app.comp.container/MaterialValue
+          :schema $ quote $ Map Tag MaterialValue
         'style-line $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-line
             {} (:kind :line-basic) (:color 0x5555aa) (:opacity 0.9) (:transparent true)
           :examples $ []
-          :schema $ quote $ Map Tag app.comp.container/MaterialValue
+          :schema $ quote $ Map Tag MaterialValue
         'style-point $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-point
             {} (:kind :mesh-lambert) (:color 0x808080) (:opacity 0.9)
           :examples $ []
-          :schema $ quote $ Map Tag app.comp.container/MaterialValue
+          :schema $ quote $ Map Tag MaterialValue
         'sum-squares $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sum-squares (& xs)
             -> xs (map square) (reduce 0 &+)
@@ -272,7 +272,7 @@
                 z' $ negate r
               Projection :p0 point :scale r :shadow ([] x' y' z') :x x' :y y'
           :examples $ []
-          :schema $ quote $ Fn (Tuple Number Number Number) (Tuple Number Number Number) Number (-> app.comp.container/Projection)
+          :schema $ quote $ Fn (Tuple Number Number Number) (Tuple Number Number Number) Number (-> Projection)
         'v+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn v+ (p q)
             let[] (x y z) p $ let[] (a b c) q $ match
@@ -334,7 +334,7 @@
           :code $ quote $ defstyle css-pop-menu
             {} $ |$0 $ {} (:max-height |90vh) (:border-radius |6px) (:padding "|8px 8px") (:z-index 900) (:position :fixed) (:left 8) (:top 32) (:overflow :auto)
               :color $ hsl 0 0 30
-              :background-color $ hsl 0 0 100 $ Option :some 0.9
+              :background-color $ hsl 0 0 100 $ Some 0.9
           :examples $ []
           :schema $ quote String
         'load-content $ %{} 'CodeEntry (:doc |)
@@ -372,29 +372,30 @@
           :schema $ quote $ Ref (Map Tag Dynamic)
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op data)
-            let
-                state-event $ cond
-                    list? op
-                    Option :some $ [] op data
-                  (= op :states)
-                    Option :some $ decode-map-as data $ List Dynamic
-                  (enum? op)
-                    match op
-                      (:states cursor state)
-                        Option :some $ [] cursor state
-                      _ $ Option :none
-                  true $ Option :none
-              reset! *store $ match state-event
-                (:some pair)
+            reset! *store $ cond
+                list? op
+                updater @*store
+                  decode-map-as op $ List Tag
+                  , data
+              (and (tag? op) (= op :states))
+                let
+                    pair $ decode-map-as data $ List Dynamic
                   updater @*store
                     decode-map-as
                       .unwrap $ nth pair 0
                       List Tag
                     .unwrap $ nth pair 1
-                (:none) @*store
-              , &unit
+              (enum? op)
+                match op
+                  (:states cursor state)
+                    updater @*store
+                      decode-map-as cursor $ List Tag
+                      , state
+                  _ @*store
+              true @*store
+            , &unit
           :examples $ []
-          :schema $ quote $ Fn Dynamic Dynamic (-> Unit)
+          :schema $ quote $ Fn Action Payload (-> Unit) (:generics Action Payload)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             when dev? (load-console-formatter!) (println "|Run in dev mode")
