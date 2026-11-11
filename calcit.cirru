@@ -379,12 +379,8 @@
                   , data
               (and (tag? op) (= op :states))
                 let
-                    pair $ decode-map-as data $ List Dynamic
-                  updater @*store
-                    decode-map-as
-                      .unwrap $ nth pair 0
-                      List Tag
-                    .unwrap $ nth pair 1
+                    pair $ decode-map-as data $ Tuple (List Tag) Dynamic
+                  let[] (cursor state) pair $ updater @*store cursor state
               (enum? op)
                 match op
                   (:states cursor state)
