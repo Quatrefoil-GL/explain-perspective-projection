@@ -364,35 +364,29 @@
         :code $ quote $ ns app.config
     'app.main $ %{} 'FileEntry
       :defs $ {}
-        '*store $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *store
-            {} $ :states $ {}
-              :cursor $ []
+        '*menu-open? $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defref *menu-open? false
           :examples $ []
-          :schema $ quote $ Ref (Map Tag Dynamic)
+          :schema $ quote $ Ref Bool
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op data)
-            reset! *store $ cond
+            reset! *menu-open? $ cond
                 list? op
-                updater @*store
+                updater @*menu-open?
                   decode-map-as op $ List Tag
                   , data
               (and (tag? op) (= op :states))
                 let
-                    pair $ decode-map-as data $ List Dynamic
-                  updater @*store
-                    decode-map-as
-                      .unwrap $ nth pair 0
-                      List Tag
-                    .unwrap $ nth pair 1
+                    pair $ decode-map-as data $ Tuple (List Tag) Dynamic
+                  let[] (cursor state) pair $ updater @*menu-open? cursor state
               (enum? op)
                 match op
                   (:states cursor state)
-                    updater @*store
+                    updater @*menu-open?
                       decode-map-as cursor $ List Tag
                       , state
-                  _ @*store
-              true @*store
+                  _ @*menu-open?
+              true @*menu-open?
             , &unit
           :examples $ []
           :schema $ quote $ Fn Action Payload (-> Unit) (:generics Action Payload)
@@ -409,7 +403,7 @@
                 canvas-el $ js/document.querySelector |canvas
               init-renderer! canvas-el $ {} $ :background 0x110022
             render-app!
-            add-watch! *store :changes $ fn (store prev) (render-app!)
+            add-watch! *menu-open? :changes $ fn (store prev) (render-app!)
             set! js/window.onkeydown handle-key-event
             render-control!
             handle-control-events
@@ -426,8 +420,8 @@
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (non-nil? build-errors) (hud! |error build-errors)
-              do (hud! |ok~ nil) (clear-cache!) (clear-control-loop!) (handle-control-events) (respo/clear-cache!) (remove-watch! *store :changes)
-                add-watch! *store :changes $ fn (store prev) (render-app!)
+              do (hud! |ok~ nil) (clear-cache!) (clear-control-loop!) (handle-control-events) (respo/clear-cache!) (remove-watch! *menu-open? :changes)
+                add-watch! *menu-open? :changes $ fn (store prev) (render-app!)
                 render-app!
                 set! js/window.onkeydown handle-key-event
                 println "|Code updated."
@@ -437,31 +431,14 @@
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             render-canvas! (comp-container) dispatch!
-            let
-                states $ quatrefoil.util.core/require-decoded $ try-decode-map-as
-                  >>
-                    .unwrap $ get @*store :states
-                    , :dom
-                  Map Tag Dynamic
-                cursor $ quatrefoil.util.core/require-decoded $ try-decode-map-as
-                  .unwrap-or (get states :cursor) ([])
-                  List Tag
-                state $ quatrefoil.util.core/require-decoded $ try-decode-map-as
-                  match (get states :data)
-                    (:some found)
-                      or found $ {}
-                    (:none) ({})
-                  Map Tag Dynamic
-                menu? $ quatrefoil.util.core/require-decoded $ try-decode-map-as
-                  .unwrap-or (get state :menu?) false
-                  , 'Bool
-              respo/render! mount-target (comp-nav cursor menu?)
-                fn (op)
-                  hint-fn $ Fn app.comp.nav/NavOp $ -> Unit
-                  match op $
-                    :menu cursor visible?
-                    reset! *store $ updater @*store cursor $ assoc state :menu? visible?
-                  , &unit
+            respo/render! mount-target
+              comp-nav ([] :dom) @*menu-open?
+              fn (op)
+                hint-fn $ Fn app.comp.nav/NavOp $ -> Unit
+                match op $
+                  :menu _cursor visible?
+                  reset! *menu-open? visible?
+                , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
@@ -478,17 +455,31 @@
             app.config :refer $ dev?
             quatrefoil.dsl.object3d-dom :refer $ set-perspective-camera!
             respo.core :as respo
-            respo.core :refer $ defcomp defeffect <> >> div button textarea span input
+            respo.core :refer $ defcomp defeffect <> div button textarea span input
             app.comp.nav :refer $ comp-nav
     'app.updater $ %{} 'FileEntry
       :defs $ {} $ 'updater
         %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn updater (store cursor state)
-            update-states store $ [] cursor state
+          :code $ quote $ defn updater (visible? cursor state)
+            if
+              = cursor $ [] :dom
+              let
+                  fields $ decode-map-as
+                    or state $ {}
+                    Map Tag Dynamic
+                decode-map-as
+                  .unwrap-or (get fields :menu?) false
+                  , 'Bool
+              , visible?
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (List Tag) State
-            -> $ Map Tag Dynamic
-            :generics State
+          :schema $ quote $ Fn Bool (List Tag) State (-> Bool) (:generics State)
+          :tests $ [] $ %{} 'TestEntry (:name |preserves-legacy-menu-updates)
+            :code $ quote $ do
+              assert= true $ updater false ([] :dom)
+                {} (:menu? true) (:legacy |ignored)
+              assert= false $ updater true ([] :dom)
+                {} $ :menu? false
+              assert= false $ updater true ([] :dom) ({})
+              assert= true $ updater true ([] :unused) ({})
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
-          :require $ quatrefoil.cursor :refer $ update-states
