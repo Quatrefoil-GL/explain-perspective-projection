@@ -298,12 +298,11 @@
     'app.comp.nav $ %{} 'FileEntry
       :defs $ {}
         'NavOp $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defenum NavOp
-            :menu (List Tag) Bool
+          :code $ quote $ defenum NavOp (:menu Bool)
           :examples $ []
           :schema $ quote EnumDef
         'comp-nav $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-nav (cursor menu?)
+          :code $ quote $ defcomp comp-nav (menu?)
             respo.core/list->
               {} $ :class-name css-nav
               concat
@@ -313,7 +312,7 @@
                       hint-fn $ Fn respo.schema/RespoEvent
                         Fn NavOp $ -> Unit
                         -> Unit
-                      d! $ NavOp :menu cursor $ not menu?
+                      d! $ NavOp :menu $ not menu?
                       , &unit
                 if menu?
                   [] $ [] 1 $ div
@@ -323,7 +322,7 @@
                     space-y 120
                   []
           :examples $ []
-          :schema $ quote $ Fn (List Tag) Bool (-> respo.schema/Component)
+          :schema $ quote $ Fn Bool (-> respo.schema/Component)
         'css-nav $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-nav
             {} $ |$0 $ merge ui/global
@@ -389,7 +388,7 @@
               true @*menu-open?
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Action Payload (-> Unit) (:generics Action Payload)
+          :schema $ quote $ Fn Action Payload (-> Unit) (:generics Action Payload) (:features :state)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             when dev? (load-console-formatter!) (println "|Run in dev mode")
@@ -411,7 +410,7 @@
             println "|App started!"
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def mount-target
             .unwrap $ respo.ffi.browser/query-selector |.page
@@ -427,20 +426,19 @@
                 println "|Code updated."
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             render-canvas! (comp-container) dispatch!
-            respo/render! mount-target
-              comp-nav ([] :dom) @*menu-open?
+            respo/render! mount-target (comp-nav @*menu-open?)
               fn (op)
                 hint-fn $ Fn app.comp.nav/NavOp $ -> Unit
                 match op $
-                  :menu _cursor visible?
+                  :menu visible?
                   reset! *menu-open? visible?
                 , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require
