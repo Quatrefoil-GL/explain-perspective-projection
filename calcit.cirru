@@ -322,7 +322,7 @@
                     space-y 120
                   []
           :examples $ []
-          :schema $ quote $ Fn Bool (-> respo.schema/Component)
+          :schema $ quote $ Fn Bool (-> respo.schema/Component) (:features :state)
         'css-nav $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-nav
             {} $ |$0 $ merge ui/global
@@ -438,7 +438,7 @@
                   reset! *menu-open? visible?
                 , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require
