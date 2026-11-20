@@ -5,7 +5,7 @@ Demo: http://r.tiye.me/Quatrefoil-GL/explain-perspective-projection/
 
 ### 使用者影响
 
-配对正式 **Calcit CLI / @calcit/procs 0.43.0**。完整正式图使用 Quatrefoil **0.3.6**、
+配对正式 **Calcit CLI / @calcit/procs 0.44.0**。完整正式图使用 Quatrefoil **0.3.6**、
 Quaternion **0.2.25**、Touch Control **0.0.41**、Pointed Prompt **0.0.28**、
 Markdown **0.9.3**、UI **0.15.5**、Respo **0.19.11**、JS-FFI **0.2.18**、Router **0.12.9**；
 需整体安装后重新生成 JS，不混装旧图，不再保留传递 Router alpha。
