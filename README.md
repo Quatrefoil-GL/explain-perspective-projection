@@ -5,9 +5,9 @@ Demo: http://r.tiye.me/Quatrefoil-GL/explain-perspective-projection/
 
 ### 使用者影响
 
-配对正式 **Calcit CLI / @calcit/procs 0.44.0**。完整正式图使用 Quatrefoil **0.3.6**、
-Quaternion **0.2.25**、Touch Control **0.0.41**、Pointed Prompt **0.0.28**、
-Markdown **0.9.3**、UI **0.15.5**、Respo **0.19.11**、JS-FFI **0.2.18**、Router **0.12.9**；
+配对正式 **Calcit CLI / @calcit/procs 0.44.0**。完整正式图使用 Quatrefoil **0.3.7**、
+Quaternion **0.2.26**、Touch Control **0.0.43**、Pointed Prompt **0.0.30**、
+Markdown **0.9.5**、UI **0.15.7**、Respo **0.19.13**、JS-FFI **0.2.19**、Router **0.12.11**；
 需整体安装后重新生成 JS，不混装旧图，不再保留传递 Router alpha。
 
 三份材质常量使用 `MaterialValue = Tag | Number | Bool`，两个 CSS 常量明确为 String；
