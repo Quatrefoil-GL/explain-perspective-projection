@@ -463,7 +463,12 @@
               = cursor $ [] :dom
               let
                   fields $ decode-map-as
-                    or state $ {}
+                    if
+                      or (nil? state)
+                        = (type-of state) :unit
+                        if (bool? state) (not state) false
+                      {}
+                      , state
                     Map Tag Dynamic
                 decode-map-as
                   .unwrap-or (get fields :menu?) false
@@ -471,13 +476,20 @@
               , visible?
           :examples $ []
           :schema $ quote $ Fn Bool (List Tag) State (-> Bool) (:generics State)
-          :tests $ [] $ %{} 'TestEntry (:name |preserves-legacy-menu-updates)
-            :code $ quote $ do
-              assert= true $ updater false ([] :dom)
-                {} (:menu? true) (:legacy |ignored)
-              assert= false $ updater true ([] :dom)
-                {} $ :menu? false
-              assert= false $ updater true ([] :dom) ({})
-              assert= true $ updater true ([] :unused) ({})
+          :tests $ []
+            %{} 'TestEntry (:name |preserves-legacy-menu-updates)
+              :code $ quote $ do
+                assert= true $ updater false ([] :dom)
+                  {} (:menu? true) (:legacy |ignored)
+                assert= false $ updater true ([] :dom)
+                  {} $ :menu? false
+                assert= false $ updater true ([] :dom) ({})
+                assert= true $ updater true ([] :unused) ({})
+            %{} 'TestEntry (:name |absent-menu-state)
+              :code $ quote $ do
+                assert= false $ updater true ([] :dom) nil
+                assert= false $ updater true ([] :dom) false
+                assert= false $ updater true ([] :dom) &unit
+              :tags $ #{} :portable
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
